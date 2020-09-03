@@ -20,7 +20,7 @@ def line_intersect(si1, si2):
         return None
     x = (b2 - b1) / (m1 - m2)
     y = m1 * x + b1
-    return x/0.8,y/0.8
+    return x,y
 
 def get_si_from_coords(lines):
     x1, y1, x2, y2 = lines.T
