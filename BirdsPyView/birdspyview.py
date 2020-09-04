@@ -5,9 +5,13 @@ from PIL import Image
 from helpers import calculate_homography, apply_homography_to_image, line_intersect, get_si_from_coords
 
 st.set_option('deprecation.showfileUploaderEncoding', False)
-image_to_open = st.sidebar.file_uploader("Image:", type=["png", "jpg"])
+image_to_open = st.sidebar.file_uploader("Upload Image:", type=["png", "jpg"])
 
 if image_to_open:
+    st.title('Pitch lines')
+    st.sidebar.write('Draw lines in the uploaded image in the order below:')
+    st.sidebar.image('pitch.png', width=300)
+    
     image = Image.open(image_to_open)
     image = image.resize((500, int(500*image.height/image.width)))
 
@@ -42,6 +46,8 @@ if canvas_image.json_data["objects"]:
         
         h,out = calculate_homography(pts_src, pts_dst)
         h_image = apply_homography_to_image(h, image)
+
+        st.title('Players')
         team_color = st.radio("Team color: ", ['red', 'blue'])
         if team_color == 'red':
             stroke_color='#e00'
