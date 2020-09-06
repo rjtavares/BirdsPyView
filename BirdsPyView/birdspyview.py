@@ -62,7 +62,7 @@ if image_to_open:
                 stroke_width = 5,
                 stroke_color = stroke_color,
                 background_image=Image.fromarray(h_image),
-                drawing_mode= "transform" if edit else "circle",
+                drawing_mode= "transform" if edit else "rect",
                 update_streamlit=update,
                 height=340,
                 width=525,
@@ -72,11 +72,11 @@ if image_to_open:
             if canvas_converted.json_data["objects"]:
                 if len(canvas_converted.json_data["objects"])>0:
                     dfCoords = pd.json_normalize(canvas_converted.json_data["objects"])
-                    dfCoords['y'] = (dfCoords['top']+dfCoords['height']/2)/340*100   #not working - how to get the center of circle?
-                    dfCoords['x'] = (dfCoords['left']+dfCoords['width']/2)/525*100
+                    dfCoords['y'] = (dfCoords['top']+dfCoords['height']*dfCoords['scaleY'])/340*100   #not working - how to get the center of circle?
+                    dfCoords['x'] = (dfCoords['left']+dfCoords['width']*dfCoords['scaleX'])/525*100
                     dfCoords['team'] = dfCoords.apply(lambda x: 'red' if x['stroke']=='#e00' else 'blue', axis=1)
 
-                st.dataframe(dfCoords)#[['team', 'x', 'y']])
+                st.dataframe(dfCoords[['team', 'x', 'y']])
                 if st.button('Save to disk'):
                     dfCoords[['team', 'x', 'y']].to_csv('output.csv')
-                    st.warning('Saved as output.csv')
+                    st.info('Saved as output.csv')
