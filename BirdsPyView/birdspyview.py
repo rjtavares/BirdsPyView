@@ -3,9 +3,11 @@ from streamlit_drawable_canvas import st_canvas
 import pandas as pd
 from PIL import Image
 from helpers import calculate_homography, apply_homography_to_image, line_intersect, get_si_from_coords
+from pitch import FootballPitch
 
 st.set_option('deprecation.showfileUploaderEncoding', False)
 image_to_open = st.sidebar.file_uploader("Upload Image:", type=["png", "jpg"])
+pitch = FootballPitch()
 
 if image_to_open:
     st.title('Pitch lines')
@@ -42,7 +44,7 @@ if image_to_open:
             DP_G = line_intersect(df.loc[1, ['slope', 'intercept']], df.loc[3, ['slope', 'intercept']])
 
             pts_src = (UP_PA, DP_PA, UP_G, DP_G)
-            pts_dst = ((82.5, 69.2), (82.5, 270.8), (0, 69.2), (0, 270.8))
+            pts_dst = pitch.get_penalty_area()
             
             h,out = calculate_homography(pts_src, pts_dst)
             h_image = apply_homography_to_image(h, image)
