@@ -1,13 +1,14 @@
 import numpy as np
+from dataclasses import dataclass, field
 
+@dataclass
 class FootballPitch:
-    def __init__(self):
-        self.SCALE = 5
-        self.X_SIZE = 105
-        self.Y_SIZE = 68
-        self.GOAL = 7.32
-        self.BOX_HEIGHT = 16.5*2 + self.GOAL
-        self.BOX_WIDTH = 16.5
+    SCALE: int = 5
+    X_SIZE: int = 105
+    Y_SIZE: int = 68
+    GOAL: float = field(default=7.32, init=False)
+    BOX_HEIGHT: float = field(default=16.5*2+7.32, init=False)
+    BOX_WIDTH: float = field(default=16.5, init=False)
 
     def get_penalty_area(self):
         SPACE = (self.Y_SIZE-self.BOX_HEIGHT)/2
