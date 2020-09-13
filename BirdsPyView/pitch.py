@@ -42,12 +42,12 @@ class FootballPitch(Pitch):
                              }
 
 
-    def get_penalty_area(self):
+    def get_penalty_area(self, convert=True):
         SPACE = (self.Y_SIZE-self.BOX_HEIGHT)/2
         PENALTY_AREA = [[self.BOX_WIDTH, SPACE],
                         [self.BOX_WIDTH, self.BOX_HEIGHT+SPACE],
                         [0, SPACE],
                         [0, self.BOX_HEIGHT+SPACE]
                        ]
-
-        return np.array(PENALTY_AREA)*self.SCALE
+        scaler = self.SCALE if convert else 1
+        return np.array(PENALTY_AREA)*scaler
