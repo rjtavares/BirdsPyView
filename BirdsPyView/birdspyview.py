@@ -15,13 +15,16 @@ if image_to_open:
     st.sidebar.image('pitch.png', width=300)
     
     image = Image.open(image_to_open)
-    image = image.resize((500, int(500*image.height/image.width)))
+    image = image.resize((600, int(600*image.height/image.width)))
 
-    # Create a canvas component to draw pitch lines
+    line_seq = ['UP','DP','RP', 'RG']
+    color_seq = ['#e00', '#00e', '#e0e', '#ee0']
+    # TODO: get query parameters for line count
+
     canvas_image = st_canvas(
         fill_color = "rgba(255, 165, 0, 0.3)", 
         stroke_width = 2,
-        stroke_color = "#e00",
+        stroke_color = "#e00", # TODO: change to color_seq[count]
         background_image=image,
         width = image.width,
         height = image.height,
@@ -30,6 +33,9 @@ if image_to_open:
     )
 
     if canvas_image.json_data["objects"]:
+        # TODO: set query parameters for line count
+        lines = [st.selectbox(f'Line #{x+1}', line_seq, key=f'line {x}', index=x)
+                 for x in range(len(canvas_image.json_data["objects"]))]
         if len(canvas_image.json_data["objects"])>=4:
             df = pd.json_normalize(canvas_image.json_data["objects"])
             df['y1_line'] = df['top']+df['y1']
@@ -56,7 +62,6 @@ if image_to_open:
             else:
                 stroke_color='#00e'
 
-            # Create a canvas component to draw pitch lines
             canvas_converted = st_canvas(
                 fill_color = "rgba(255, 165, 0, 0.3)",  # Fixed fill color with some opacity
                 stroke_width = 5,
