@@ -12,7 +12,7 @@ class Pitch:
         return intersections
 
     def get_lines(self):
-        return list(set(self.vert_lines).union(set(self.horiz_lines)))
+        return list(sorted(set(self.vert_lines).union(set(self.horiz_lines))))
 
     def scaler(self, convert):
         return self.SCALE if convert else 1

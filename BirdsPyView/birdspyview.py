@@ -12,7 +12,7 @@ pitch = FootballPitch()
 
 if image_to_open:
     st.title('Pitch lines')
-    st.sidebar.write('Draw Penalty Box lines in the order shown below:')
+    st.sidebar.write('Draw Penalty Box lines (options below)')
     st.sidebar.image('pitch.png', width=300)
     
     image = Image.open(image_to_open)
