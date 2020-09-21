@@ -64,11 +64,11 @@ if image_to_open:
             else:
                 stroke_color='#00e'
 
-            edit = st.checkbox('Edit mode')
+            edit = st.checkbox('Edit mode (move selection boxes)')
             update = st.button('Update data')
             canvas_converted = st_canvas(
                 fill_color = "rgba(255, 165, 0, 0.3)",  # Fixed fill color with some opacity
-                stroke_width = 5,
+                stroke_width = 2,
                 stroke_color = stroke_color,
                 background_image=Image.fromarray(h_image),
                 drawing_mode= "transform" if edit else "rect",
