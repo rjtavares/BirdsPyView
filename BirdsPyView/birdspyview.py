@@ -58,31 +58,34 @@ if image_to_open:
             h_image = apply_homography_to_image(h, image)
 
             st.title('Players')
-            team_color = st.radio("Team color: ", ['red', 'blue'])
+            team_color = st.selectbox("Team color: ", ['red', 'blue'])
             if team_color == 'red':
                 stroke_color='#e00'
             else:
                 stroke_color='#00e'
 
+            edit = st.checkbox('Edit mode')
+            update = st.button('Update data')
             canvas_converted = st_canvas(
                 fill_color = "rgba(255, 165, 0, 0.3)",  # Fixed fill color with some opacity
                 stroke_width = 5,
                 stroke_color = stroke_color,
                 background_image=Image.fromarray(h_image),
-                drawing_mode= "line",
+                drawing_mode= "transform" if edit else "rect",
+                update_streamlit=update,
                 height=340,
                 width=525,
                 key="canvas2",
             )
 
             if canvas_converted.json_data["objects"]:
-                dfCoords = pd.json_normalize(canvas_converted.json_data["objects"])
-                dfCoords['y'] = dfCoords['top']/340*100
-                dfCoords['x'] = dfCoords['left']/525*100
-                dfCoords['team'] = dfCoords.apply(lambda x: 'red' if x['stroke']=='#e00' else 'blue', axis=1)
-                if st.button('Preview'):
-                    st.dataframe(dfCoords[['team', 'x', 'y']])
+                if len(canvas_converted.json_data["objects"])>0:
+                    dfCoords = pd.json_normalize(canvas_converted.json_data["objects"])
+                    dfCoords['y'] = (dfCoords['top']+dfCoords['height']*dfCoords['scaleY'])/340*100   #not working - how to get the center of circle?
+                    dfCoords['x'] = (dfCoords['left']+dfCoords['width']*dfCoords['scaleX'])/525*100
+                    dfCoords['team'] = dfCoords.apply(lambda x: 'red' if x['stroke']=='#e00' else 'blue', axis=1)
 
+                st.dataframe(dfCoords[['team', 'x', 'y']])
                 if st.button('Save to disk'):
                     dfCoords[['team', 'x', 'y']].to_csv('output.csv')
-                    st.warning('Saved as output.csv')
+                    st.info('Saved as output.csv')
