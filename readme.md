@@ -18,7 +18,7 @@ Finally, clone the repo and inside BirdsPyView run:
 
 1. Upload an image. All the lines from the Penalty Box must be visible, but the whole line is not necessary.
 
-2. Draw a line over each of the Penalty Box lines in the order shown below. You don't need to cover the whole line.
+2. Draw a line over four pitch lines (from the options shown below), two of them vertical and two horizontal. You don't need to cover the whole line. If possible, use the penalty area.
 
 ![](BirdsPyView/pitch.png?raw=true)
 

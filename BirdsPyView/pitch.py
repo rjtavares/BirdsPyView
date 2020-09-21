@@ -3,12 +3,19 @@ from itertools import product
 from dataclasses import dataclass, field
 
 class Pitch:
-    def get_intersections(self):
+    def get_intersections(self, scale=True):
         intersection_points = list(product(self.vert_lines.keys(), self.horiz_lines.keys()))
-        intersections = {'_'.join([vl, hl]): (self.vert_lines[vl], self.horiz_lines[hl])
+        scaler = self.scaler(scale)
+        intersections = {'_'.join([vl, hl]): (self.vert_lines[vl]*scaler, self.horiz_lines[hl]*scaler)
                         for vl, hl in intersection_points}
         
         return intersections
+
+    def get_lines(self):
+        return list(sorted(set(self.vert_lines).union(set(self.horiz_lines))))
+
+    def scaler(self, convert):
+        return self.SCALE if convert else 1
 
 @dataclass
 class FootballPitch(Pitch):
@@ -25,7 +32,7 @@ class FootballPitch(Pitch):
         self.vert_lines = {'LG': 0,
                            'LGA': self.GOAL_AREA_WIDTH,
                            'LPA': self.BOX_WIDTH,
-                           'HW': self.X_SIZE/2,
+                           'M': self.X_SIZE/2,
                            'RPA': self.X_SIZE-self.BOX_WIDTH,
                            'RGA': self.X_SIZE-self.GOAL_AREA_WIDTH,
                            'RG': self.X_SIZE
