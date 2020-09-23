@@ -86,7 +86,7 @@ if image_to_open:
                     if original:
                         dfCoords['y'] = (dfCoords['top']+dfCoords['height']*dfCoords['scaleY'])
                         dfCoords['x'] = (dfCoords['left']+(dfCoords['width']*dfCoords['scaleX'])/2)
-                        st.write(apply_homography_to_points(h, dfCoords[['x', 'y']].values)*np.array([100/525, 100/340]))
+                        dfCoords[['x', 'y']] = apply_homography_to_points(h, dfCoords[['x', 'y']].values)*np.array([100/525, 100/340])
                     else:
                         dfCoords['y'] = (dfCoords['top']+dfCoords['height']*dfCoords['scaleY'])/340*100
                         dfCoords['x'] = (dfCoords['left']+dfCoords['width']*dfCoords['scaleX'])/525*100
