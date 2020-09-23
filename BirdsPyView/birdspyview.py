@@ -2,7 +2,7 @@ import streamlit as st
 from streamlit_drawable_canvas import st_canvas
 import pandas as pd
 from PIL import Image
-from helpers import calculate_homography, apply_homography_to_image, line_intersect, get_si_from_coords
+from helpers import *
 from pitch import FootballPitch
 from itertools import product
 
@@ -65,24 +65,31 @@ if image_to_open:
                 stroke_color='#00e'
 
             edit = st.checkbox('Edit mode (move selection boxes)')
+            original = st.checkbox('Select on original image [experimental]')
             update = st.button('Update data')
+            image2 = image if original else Image.fromarray(h_image)
             canvas_converted = st_canvas(
                 fill_color = "rgba(255, 165, 0, 0.3)",  # Fixed fill color with some opacity
                 stroke_width = 2,
                 stroke_color = stroke_color,
-                background_image=Image.fromarray(h_image),
-                drawing_mode= "transform" if edit else "rect",
-                update_streamlit=update,
-                height=340,
-                width=525,
+                background_image = image2,
+                drawing_mode = "transform" if edit else "rect",
+                update_streamlit = update,
+                height = 340,
+                width = 525,
                 key="canvas2",
             )
 
             if canvas_converted.json_data["objects"]:
                 if len(canvas_converted.json_data["objects"])>0:
                     dfCoords = pd.json_normalize(canvas_converted.json_data["objects"])
-                    dfCoords['y'] = (dfCoords['top']+dfCoords['height']*dfCoords['scaleY'])/340*100   #not working - how to get the center of circle?
-                    dfCoords['x'] = (dfCoords['left']+dfCoords['width']*dfCoords['scaleX'])/525*100
+                    if original:
+                        dfCoords['y'] = (dfCoords['top']+dfCoords['height']*dfCoords['scaleY'])
+                        dfCoords['x'] = (dfCoords['left']+(dfCoords['width']*dfCoords['scaleX'])/2)
+                        st.write(apply_homography_to_points(h, dfCoords[['x', 'y']].values)*np.array([100/525, 100/340]))
+                    else:
+                        dfCoords['y'] = (dfCoords['top']+dfCoords['height']*dfCoords['scaleY'])/340*100
+                        dfCoords['x'] = (dfCoords['left']+dfCoords['width']*dfCoords['scaleX'])/525*100
                     dfCoords['team'] = dfCoords.apply(lambda x: 'red' if x['stroke']=='#e00' else 'blue', axis=1)
 
                 st.dataframe(dfCoords[['team', 'x', 'y']])
