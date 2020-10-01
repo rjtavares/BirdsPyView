@@ -1,10 +1,11 @@
 import streamlit as st
 from streamlit_drawable_canvas import st_canvas
 import pandas as pd
-from PIL import Image
+from PIL import Image, ImageDraw
 from helpers import *
 from pitch import FootballPitch
 from itertools import product
+from shapely.geometry import Polygon
 
 st.set_option('deprecation.showfileUploaderEncoding', False)
 image_to_open = st.sidebar.file_uploader("Upload Image:", type=["png", "jpg"])
@@ -54,8 +55,8 @@ if image_to_open:
             pts_src = list(intersections.values())
             pts_dst = [pitch.get_intersections()[x] for x in intersections]
 
-            h,out = calculate_homography(pts_src, pts_dst)
-            h_image = apply_homography_to_image(h, image)
+            h = Homography(pts_src, pts_dst)
+            h_image = h.apply_to_image(image)
 
             st.title('Players')
             team_color = st.selectbox("Team color: ", ['red', 'blue'])
@@ -65,18 +66,20 @@ if image_to_open:
                 stroke_color='#00e'
 
             edit = st.checkbox('Edit mode (move selection boxes)')
-            original = st.checkbox('Select on original image [experimental]')
+            original = True #st.checkbox('Select on original image', value=True)
             update = st.button('Update data')
             image2 = image if original else Image.fromarray(h_image)
+            height2 = image.height if original else 340
+            width2 = image.width if original else 525
             canvas_converted = st_canvas(
-                fill_color = "rgba(255, 165, 0, 0.3)",  # Fixed fill color with some opacity
+                fill_color = "rgba(255, 165, 0, 0.3)",
                 stroke_width = 2,
                 stroke_color = stroke_color,
                 background_image = image2,
                 drawing_mode = "transform" if edit else "rect",
                 update_streamlit = update,
-                height = 340,
-                width = 525,
+                height = height2,
+                width = width2,
                 key="canvas2",
             )
 
@@ -86,13 +89,40 @@ if image_to_open:
                     if original:
                         dfCoords['y'] = (dfCoords['top']+dfCoords['height']*dfCoords['scaleY'])
                         dfCoords['x'] = (dfCoords['left']+(dfCoords['width']*dfCoords['scaleX'])/2)
-                        dfCoords[['x', 'y']] = apply_homography_to_points(h, dfCoords[['x', 'y']].values)*np.array([100/525, 100/340])
+                        dfCoords[['x', 'y']] = h.apply_to_points(dfCoords[['x', 'y']].values)*np.array([100/525, 100/340])
                     else:
                         dfCoords['y'] = (dfCoords['top']+dfCoords['height']*dfCoords['scaleY'])/340*100
                         dfCoords['x'] = (dfCoords['left']+dfCoords['width']*dfCoords['scaleX'])/525*100
                     dfCoords['team'] = dfCoords.apply(lambda x: 'red' if x['stroke']=='#e00' else 'blue', axis=1)
 
                 st.dataframe(dfCoords[['team', 'x', 'y']])
+                pitch_polygon = Polygon(((0,0), (0,340), (525,340), (525,0)))
+                camera_polygon = Polygon(h.apply_to_points(((0,0), (0,image.height), (image.width, image.height), (image.width,0))))
+                
+                show_original = st.checkbox('Show on original image', value=True)
+                vor, dfVor = calculate_voronoi(dfCoords[['team', 'x', 'y']])
+                final_image = image if show_original else Image.fromarray(h_image)
+                for index, region in enumerate(vor.regions):
+                    if not -1 in region:
+                        if len(region)>0:
+                            base_polygon = Polygon((np.vstack([vor.vertices[i] for i in region])/np.array([100/525, 100/340])).tolist())
+                            polygon = camera_polygon.intersection(pitch_polygon).intersection(base_polygon)
+                            if polygon.area>0:
+                                if show_original:
+                                    polygon = h.apply_to_points(np.vstack(polygon.exterior.xy).T, inverse=True)
+                                else:
+                                    polygon = np.vstack(polygon.exterior.xy).T
+                                draw = ImageDraw.Draw(final_image, mode='RGBA')
+                                color = dfVor[dfVor['region']==index]['team'].values[0]
+                                if color == 'red':
+                                    fill_color=(255,0,0,30)
+                                else:
+                                    fill_color=(0,0,255,30)
+                                draw.polygon(list(tuple(point) for point in polygon.tolist()), fill=fill_color, outline='gray')
+                            else:
+                                st.write(polygon)
+                st.image(final_image)
+
                 if st.button('Save to disk'):
                     dfCoords[['team', 'x', 'y']].to_csv('output.csv')
                     st.info('Saved as output.csv')

@@ -1,25 +1,23 @@
 import cv2
 import numpy as np
 
-def calculate_homography(pts_src, pts_dst):
-    pts_src = np.array(pts_src)
-    pts_dst = np.array(pts_dst)
-    return cv2.findHomography(pts_src, pts_dst)
+class Homography():
+    def __init__(self, pts_src, pts_dst):
+        self.pts_src = np.array(pts_src)
+        self.pts_dst = np.array(pts_dst)
+        self.h, out = cv2.findHomography(self.pts_src, self.pts_dst)
+        self.im_size = (525, 340)
 
-def convert_PIL_to_openCV(image):
-    return np.array(image)
+    def apply_to_image(self, img):
+        im_out = cv2.warpPerspective(np.array(img), self.h, self.im_size)
+        return im_out
 
-def apply_homography_to_image(h, img):
-    im_out = cv2.warpPerspective(convert_PIL_to_openCV(img), h, (525, 340))
-    return im_out
-
-def apply_homography_to_points(h, points, inverse=False):
-    if inverse:
-        h = np.linalg.inv(h)
-    _points = np.hstack([points, np.ones((len(points), 1))])
-    _converted_points = np.dot(h,_points.T)
-    points = _converted_points/_converted_points[2]
-    return points[:2].T
+    def apply_to_points(self, points, inverse=False):
+        h = np.linalg.inv(self.h) if inverse else self.h
+        _points = np.hstack([points, np.ones((len(points), 1))])
+        _converted_points = np.dot(h,_points.T)
+        points = _converted_points/_converted_points[2]
+        return points[:2].T
 
 def line_intersect(si1, si2):
     m1, b1 = si1
@@ -35,3 +33,18 @@ def get_si_from_coords(lines):
     slope = (y2-y1) / (x2-x1)
     intercept = y2-slope*x2
     return slope, intercept
+
+def calculate_voronoi(df):
+    from scipy.spatial import Voronoi
+    values = np.vstack((df[['x', 'y']].values,
+                        [-1000,-1000],
+                        [+1000,+1000],
+                        [+1000,-1000],
+                        [-1000,+1000]
+                       ))
+
+    vor = Voronoi(values)
+
+    df['region'] = vor.point_region[:-4]
+
+    return vor, df
