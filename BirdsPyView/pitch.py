@@ -4,8 +4,6 @@ from dataclasses import dataclass, field
 
 @dataclass
 class Pitch:
-    SCALE: int = 5
-
     def get_intersections(self, scale=True):
         intersection_points = list(product(self.vert_lines.keys(), self.horiz_lines.keys()))
         scaler = self.scaler(scale)
@@ -21,6 +19,7 @@ class Pitch:
 
 @dataclass
 class FootballPitch(Pitch):
+    SCALE: int = 5
     X_SIZE: float = 105
     Y_SIZE: float = 68
     GOAL: float = field(default=7.32, init=False)
@@ -63,5 +62,6 @@ class FootballPitch(Pitch):
 
 @dataclass
 class BasketballPitch(Pitch):
+    SCALE: int = 18
     X_SIZE: float = 28.7
     Y_SIZE: float = 15.2
