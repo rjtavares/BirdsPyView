@@ -2,3 +2,4 @@ opencv-python
 streamlit-drawable-canvas
 pandas
 shapely
+scipy
