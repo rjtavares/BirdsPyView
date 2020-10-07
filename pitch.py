@@ -2,19 +2,26 @@ import numpy as np
 from itertools import product
 from dataclasses import dataclass, field
 
+@dataclass
 class Pitch:
-    def get_intersections(self):
+    def get_intersections(self, scale=True):
         intersection_points = list(product(self.vert_lines.keys(), self.horiz_lines.keys()))
-        intersections = {'_'.join([vl, hl]): (self.vert_lines[vl], self.horiz_lines[hl])
+        scaler = self.scaler(scale)
+        intersections = {'_'.join([vl, hl]): (self.vert_lines[vl]*scaler, self.horiz_lines[hl]*scaler)
                         for vl, hl in intersection_points}
-        
         return intersections
+
+    def get_lines(self):
+        return list(sorted(set(self.vert_lines).union(set(self.horiz_lines))))
+
+    def scaler(self, convert):
+        return self.SCALE if convert else 1
 
 @dataclass
 class FootballPitch(Pitch):
     SCALE: int = 5
-    X_SIZE: int = 105
-    Y_SIZE: int = 68
+    X_SIZE: float = 105
+    Y_SIZE: float = 68
     GOAL: float = field(default=7.32, init=False)
     BOX_HEIGHT: float = field(default=16.5*2+7.32, init=False)
     BOX_WIDTH: float = field(default=16.5, init=False)
@@ -25,7 +32,7 @@ class FootballPitch(Pitch):
         self.vert_lines = {'LG': 0,
                            'LGA': self.GOAL_AREA_WIDTH,
                            'LPA': self.BOX_WIDTH,
-                           'HW': self.X_SIZE/2,
+                           'M': self.X_SIZE/2,
                            'RPA': self.X_SIZE-self.BOX_WIDTH,
                            'RGA': self.X_SIZE-self.GOAL_AREA_WIDTH,
                            'RG': self.X_SIZE
@@ -51,3 +58,10 @@ class FootballPitch(Pitch):
                        ]
         scaler = self.SCALE if convert else 1
         return np.array(PENALTY_AREA)*scaler
+
+
+@dataclass
+class BasketballPitch(Pitch):
+    SCALE: int = 18
+    X_SIZE: float = 28.7
+    Y_SIZE: float = 15.2
