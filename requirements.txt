@@ -1,5 +1,6 @@
-opencv-python
+streamlit == 0.69.1
 streamlit-drawable-canvas
+opencv-python
 pandas
 shapely
 scipy
