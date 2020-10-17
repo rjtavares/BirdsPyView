@@ -74,18 +74,19 @@ class PitchImage():
         return pts_src, pts_dst
 
     def apply_voronoi(self, voronoi, opacity=70, original=True):
-        final_image = self.im if original else self.conv_im
+        base_image = self.im if original else self.conv_im
+        polygon_image = Image.new('RGBA', base_image.size, (0,0,0,0))
+        draw = ImageDraw.Draw(polygon_image, mode='RGBA')
         for region in voronoi.get_regions():
             polygon = get_polygon(voronoi.get_points_region(region)*self.coord_converter,
                                     self, original)
-            draw = ImageDraw.Draw(final_image, mode='RGBA')
             color = voronoi.get_color_region(region)
             if color == 'red':
                 fill_color=(255,0,0,opacity)
             else:
                 fill_color=(0,0,255,opacity)
             draw.polygon(list(tuple(point) for point in polygon.tolist()), fill=fill_color, outline='gray')
-        return final_image
+        return Image.alpha_composite(base_image.convert("RGBA"), polygon_image)
 
 
 def line_intersect(si1, si2):
