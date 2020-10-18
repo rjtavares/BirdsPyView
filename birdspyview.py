@@ -57,7 +57,8 @@ if image_to_open:
                 st.image(image.conv_im)
 
             st.title('Players')
-            st.write('Draw rectangle over players on image')
+            st.write('Draw rectangle over players on image. '+
+                     'The player location is assumed to the middle of the base of the rectangle.')
 
             p_col1, p_col2, p_col_, p_col3 = st.beta_columns([2,1,0.5,1])
 

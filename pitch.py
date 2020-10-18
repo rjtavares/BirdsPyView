@@ -35,7 +35,9 @@ class FootballPitch(Pitch):
                            'M': self.X_SIZE/2,
                            'RPA': self.X_SIZE-self.BOX_WIDTH,
                            'RGA': self.X_SIZE-self.GOAL_AREA_WIDTH,
-                           'RG': self.X_SIZE
+                           'RG': self.X_SIZE,
+                           'RCC': self.X_SIZE/2+9.15,
+                           'LCC': self.X_SIZE/2-9.15
                            }
 
         self.horiz_lines =  {'DG': self.BOX_HEIGHT,

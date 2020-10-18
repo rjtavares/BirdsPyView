@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 from shapely.geometry import Polygon
 from itertools import product
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageChops
 
 class Homography():
     def __init__(self, pts_src, pts_dst):
@@ -86,6 +86,10 @@ class PitchImage():
             else:
                 fill_color=(0,0,255,opacity)
             draw.polygon(list(tuple(point) for point in polygon.tolist()), fill=fill_color, outline='gray')
+
+        pitch_mask = get_edge_img(base_image)
+        polygon_image.putalpha(Image.fromarray(np.minimum(pitch_mask, np.array(polygon_image.split()[-1]))))
+
         return Image.alpha_composite(base_image.convert("RGBA"), polygon_image)
 
 
@@ -126,3 +130,13 @@ def get_polygon(points, image, convert):
     else:
         polygon = np.vstack(polygon.exterior.xy).T
     return polygon
+    
+def get_edge_img(img, sensitivity=25):
+    hsv_img = cv2.cvtColor(np.array(img), cv2.COLOR_BGR2HSV)
+    median_hue = np.median(hsv_img[:,:,0])
+
+    min_filter = np.array([median_hue - sensitivity, 50, 50])
+    max_filter = np.array([median_hue + sensitivity, 200, 200])
+
+    mask = cv2.inRange(hsv_img, min_filter, max_filter)
+    return mask
