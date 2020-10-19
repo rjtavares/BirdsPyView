@@ -109,9 +109,12 @@ if image_to_open:
                 st.title('Final Output')
                 voronoi = VoronoiPitch(dfCoords)
                 opacity = int(st.slider('Opacity', 0, 100, value=30)*2.5)
+                sensitivity = int(st.slider("Sensitivity (decrease if the areas are drawn over the players; "+
+                                            "increase if the areas don't cover the whole pitch)"
+                                            , 0, 80, value=10)*2.5)
                 o_col1, o_col2 = st.beta_columns(2)
-                with o_col1: st.image(image.apply_voronoi(voronoi, opacity, True))
-                with o_col2: st.image(image.apply_voronoi(voronoi, opacity, False))
+                with o_col1: st.image(image.apply_voronoi(voronoi, opacity, True, sensitivity))
+                with o_col2: st.image(image.apply_voronoi(voronoi, opacity, False, sensitivity))
 
                 if st.button('Save data to disk'):
                     dfCoords[['team', 'x', 'y']].to_csv('output.csv')

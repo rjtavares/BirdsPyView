@@ -73,7 +73,7 @@ class PitchImage():
 
         return pts_src, pts_dst
 
-    def apply_voronoi(self, voronoi, opacity=70, original=True):
+    def apply_voronoi(self, voronoi, opacity=70, original=True, sensitivity=25):
         base_image = self.im if original else self.conv_im
         polygon_image = Image.new('RGBA', base_image.size, (0,0,0,0))
         draw = ImageDraw.Draw(polygon_image, mode='RGBA')
@@ -87,7 +87,7 @@ class PitchImage():
                 fill_color=(0,0,255,opacity)
             draw.polygon(list(tuple(point) for point in polygon.tolist()), fill=fill_color, outline='gray')
 
-        pitch_mask = get_edge_img(base_image)
+        pitch_mask = get_edge_img(base_image, sensitivity=sensitivity)
         polygon_image.putalpha(Image.fromarray(np.minimum(pitch_mask, np.array(polygon_image.split()[-1]))))
 
         return Image.alpha_composite(base_image.convert("RGBA"), polygon_image)
@@ -133,10 +133,10 @@ def get_polygon(points, image, convert):
     
 def get_edge_img(img, sensitivity=25):
     hsv_img = cv2.cvtColor(np.array(img), cv2.COLOR_BGR2HSV)
-    median_hue = np.median(hsv_img[:,:,0])
-
-    min_filter = np.array([median_hue - sensitivity, 50, 50])
-    max_filter = np.array([median_hue + sensitivity, 200, 200])
+    hues = hsv_img[:,:,0]
+    median_hue = np.median(hues[hues>1])
+    min_filter = np.array([median_hue - sensitivity, 20, 0])
+    max_filter = np.array([median_hue + sensitivity, 255, 255])
 
     mask = cv2.inRange(hsv_img, min_filter, max_filter)
     return mask
