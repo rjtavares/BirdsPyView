@@ -73,8 +73,11 @@ class PitchImage():
 
         return pts_src, pts_dst
 
+    def get_image(self, original=True):
+        return self.im if original else self.conv_im
+
     def apply_voronoi(self, voronoi, opacity=70, original=True, sensitivity=25):
-        base_image = self.im if original else self.conv_im
+        base_image = self.get_image(original)
         polygon_image = Image.new('RGBA', base_image.size, (0,0,0,0))
         draw = ImageDraw.Draw(polygon_image, mode='RGBA')
         for region in voronoi.get_regions():
@@ -86,12 +89,7 @@ class PitchImage():
             else:
                 fill_color=(0,0,255,opacity)
             draw.polygon(list(tuple(point) for point in polygon.tolist()), fill=fill_color, outline='gray')
-
-        pitch_mask = get_edge_img(base_image, sensitivity=sensitivity)
-        polygon_image.putalpha(Image.fromarray(np.minimum(pitch_mask, np.array(polygon_image.split()[-1]))))
-
-        return Image.alpha_composite(base_image.convert("RGBA"), polygon_image)
-
+        return apply_effect(base_image, polygon_image, opacity, original, sensitivity)
 
 def line_intersect(si1, si2):
     m1, b1 = si1
@@ -140,3 +138,9 @@ def get_edge_img(img, sensitivity=25):
 
     mask = cv2.inRange(hsv_img, min_filter, max_filter)
     return mask
+
+def apply_effect(base_image, effect_image, opacity=70, original=True, sensitivity=25):
+    pitch_mask = get_edge_img(base_image, sensitivity=sensitivity)
+    effect_image.putalpha(Image.fromarray(np.minimum(pitch_mask, np.array(effect_image.split()[-1]))))
+    return Image.alpha_composite(base_image.convert("RGBA"), effect_image)
+
