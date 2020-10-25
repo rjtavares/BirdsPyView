@@ -1,8 +1,7 @@
 import streamlit as st
 from streamlit_drawable_canvas import st_canvas
 import pandas as pd
-from PIL import Image, ImageDraw
-from helpers import Homography, VoronoiPitch, PitchImage, get_polygon
+from helpers import Homography, VoronoiPitch, PitchImage, PitchDraw
 from pitch import FootballPitch
 
 st.set_option('deprecation.showfileUploaderEncoding', False)
@@ -46,9 +45,9 @@ if image_to_open:
 
         with col3: st.image('pitch.png', width=300)
 
-    if canvas_image.json_data["objects"]:
+    if canvas_image.json_data is not None:
         n_lines = len(canvas_image.json_data["objects"])
-        with col3: st.write(f'You have drawn {n_lines} lines')
+        with col3: st.write(f'You have drawn {n_lines} lines. Use the Undo button to delete lines.')
         if n_lines>=4:
             image.set_info(pd.json_normalize(canvas_image.json_data["objects"]), hlines+vlines)
 
@@ -73,9 +72,9 @@ if image_to_open:
                 update = st.button('Update data')
                 original = True #st.checkbox('Select on original image', value=True)
 
-            image2 = image.im if original else image.conv_im
-            height2 = image.im.height if original else image.conv_im.heigth
-            width2 = image.im.width if original else image.conv_im.width
+            image2 = image.get_image(original)
+            height2 = image2.height
+            width2 = image2.width
             with p_col1:
                 canvas_converted = st_canvas(
                     fill_color = "rgba(255, 165, 0, 0.3)",
@@ -89,7 +88,7 @@ if image_to_open:
                     key="canvas2",
                 )
 
-            if canvas_converted is not None:
+            if canvas_converted.json_data is not None:
                 if len(canvas_converted.json_data["objects"])>0:
                     dfCoords = pd.json_normalize(canvas_converted.json_data["objects"])
                     if original:
@@ -99,7 +98,7 @@ if image_to_open:
                     else:
                         dfCoords['x'] = (dfCoords['left']+dfCoords['width']*dfCoords['scaleX'])
                         dfCoords['y'] = (dfCoords['top']+dfCoords['height']*dfCoords['scaleY'])
-                    dfCoords[['x', 'y']] = dfCoords[['x', 'y']]/image.coord_converter
+                    dfCoords[['x', 'y']] = dfCoords[['x', 'y']]/image.h.coord_converter
                     dfCoords['team'] = dfCoords.apply(lambda x: 'red' if x['stroke']=='#e00' else 'blue', axis=1)
 
                 with p_col3:
@@ -108,13 +107,34 @@ if image_to_open:
 
                 st.title('Final Output')
                 voronoi = VoronoiPitch(dfCoords)
-                opacity = int(st.slider('Opacity', 0, 100, value=30)*2.5)
-                sensitivity = int(st.slider("Sensitivity (decrease if the areas are drawn over the players; "+
+                sensitivity = int(st.slider("Sensitivity (decrease if it is drawing over the players; "+
                                             "increase if the areas don't cover the whole pitch)"
                                             , 0, 80, value=10)*2.5)
-                o_col1, o_col2 = st.beta_columns(2)
-                with o_col1: st.image(image.apply_voronoi(voronoi, opacity, True, sensitivity))
-                with o_col2: st.image(image.apply_voronoi(voronoi, opacity, False, sensitivity))
+                o_col1, o_col2, o_col3 = st.beta_columns((4,3,1))
+                with o_col3:
+                    show_voronoi = st.checkbox('Show Voronoi', value=True)
+                    voronoi_opacity = int(st.slider('Opacity', 0, 100, value=30)*2.5)
+                    player_highlights = st.multiselect('Players to highlight', list(dfCoords.index))
+                    player_size = st.slider('Circle size', 1, 10)
+                    player_opaciy = int(st.slider('Opacity', 0, 100, value=50)*2.5)
+                with o_col1:
+                    draw = PitchDraw(image, original=True)
+                    if show_voronoi:
+                        draw.draw_voronoi(voronoi, image, voronoi_opacity)
+                    for pid, coord in dfCoords.iterrows():
+                        if coord['team']=='red':
+                            fill_color = (255,0,0,player_opaciy)
+                        else:
+                            fill_color=(0,0,255,player_opaciy)
+                        if pid in player_highlights:
+                            draw.draw_circle(coord[['x','y']].values, fill_color, player_size)
+                    st.image(draw.compose_image(sensitivity))
+                with o_col2:
+                    draw = PitchDraw(image, original=False)
+                    for pid, coord in dfCoords.iterrows():
+                        draw.draw_circle(coord[['x','y']].values, 1)
+                        draw.draw_text(coord[['x','y']], f"{pid}", coord['team'])
+                    st.image(draw.compose_image(sensitivity))
 
                 if st.button('Save data to disk'):
                     dfCoords[['team', 'x', 'y']].to_csv('output.csv')
