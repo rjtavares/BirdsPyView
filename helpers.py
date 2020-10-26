@@ -1,8 +1,10 @@
 import cv2
 import numpy as np
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon, Point
+from shapely.affinity import scale
 from itertools import product
-from PIL import Image, ImageDraw, ImageChops
+from PIL import Image, ImageFont, ImageDraw, ImageChops
+import streamlit as st
 
 class Homography():
     def __init__(self, pts_src, pts_dst):
@@ -12,12 +14,13 @@ class Homography():
         self.im_size = (525, 340)
         self.im_width = self.im_size[0]
         self.im_heigth = self.im_size[1]
+        self.coord_converter = np.array(self.im_size)/100
 
     def apply_to_image(self, image):
         im_out = cv2.warpPerspective(np.array(image.im), self.h, self.im_size)
         return im_out
 
-    def apply_to_points(self, points, inverse=False, normalize=False):
+    def apply_to_points(self, points, inverse=False):
         h = np.linalg.inv(self.h) if inverse else self.h
         _points = np.hstack([points, np.ones((len(points), 1))])
         _converted_points = np.dot(h,_points.T)
@@ -36,6 +39,11 @@ class VoronoiPitch():
     
     def get_color_region(self, region):
         return self.df[self.df['region']==region]['team'].values[0]
+
+    def get_voronoi_polygons(self, image, original=True):
+        return [{'polygon': get_polygon(self.get_points_region(region)*image.h.coord_converter, image, original),
+                 'color': self.get_color_region(region)}
+                for region in self.get_regions()]
 
 class PitchImage():
     def __init__(self, image_to_open, pitch, width=600):
@@ -59,7 +67,6 @@ class PitchImage():
         self.lines = lines
         self.h = Homography(*self.get_intersections())
         self.conv_im = Image.fromarray(self.h.apply_to_image(self))
-        self.coord_converter = np.array(self.h.im_size)/100
 
     def get_intersections(self):
         lines = self.lines
@@ -76,20 +83,55 @@ class PitchImage():
     def get_image(self, original=True):
         return self.im if original else self.conv_im
 
-    def apply_voronoi(self, voronoi, opacity=70, original=True, sensitivity=25):
-        base_image = self.get_image(original)
-        polygon_image = Image.new('RGBA', base_image.size, (0,0,0,0))
-        draw = ImageDraw.Draw(polygon_image, mode='RGBA')
-        for region in voronoi.get_regions():
-            polygon = get_polygon(voronoi.get_points_region(region)*self.coord_converter,
-                                    self, original)
-            color = voronoi.get_color_region(region)
-            if color == 'red':
-                fill_color=(255,0,0,opacity)
-            else:
-                fill_color=(0,0,255,opacity)
-            draw.polygon(list(tuple(point) for point in polygon.tolist()), fill=fill_color, outline='gray')
-        return apply_effect(base_image, polygon_image, opacity, original, sensitivity)
+    def get_pitch_coords(self):
+        return ((0,0), (0,self.h.im_heigth), (self.h.im_width,self.h.im_heigth), (self.h.im_width,0))
+
+    def get_camera_coords(self):
+        return self.h.apply_to_points(((0,0), (0,self.im.height), (self.im.width, self.im.height), (self.im.width,0)))
+
+
+class PitchDraw():
+    def __init__(self, pitch_image, original=True):
+        self.base_im = pitch_image.get_image(original).copy()
+        self.draw_im = Image.new('RGBA', self.base_im.size, (0,0,0,0))
+        self.draw = ImageDraw.Draw(self.draw_im, mode='RGBA')
+        self.original = original
+        self.h = pitch_image.h
+
+    def draw_polygon(self, polygon, color):
+        self.draw.polygon(list(tuple(point) for point in polygon.tolist()), fill=color, outline='gray')
+
+    def draw_voronoi(self, voronoi, image, opacity):
+        for pol in voronoi.get_voronoi_polygons(image, self.original):
+            if pol['polygon'] is not None:
+                if pol['color'] == 'red':
+                    fill_color=(255,0,0,opacity)
+                else:
+                    fill_color=(0,0,255,opacity)
+                self.draw_polygon(pol['polygon'], fill_color)
+
+    def draw_circle(self, xy, color, size=1):
+        center = Point(*xy)
+        scaler = self.h.coord_converter/self.h.coord_converter.sum()*2
+        circle = scale(center.buffer(size), *reversed(scaler))
+        if self.original:
+            points = self.h.apply_to_points(np.vstack(circle.exterior.xy).T*self.h.coord_converter, inverse=True)
+        else:
+            points = np.vstack(circle.exterior.xy).T*self.h.coord_converter
+        self.draw_polygon(points, color)
+
+    def draw_text(self, xy, string, color):
+        xy = xy*self.h.coord_converter
+        font = ImageFont.truetype("arial.ttf", size=12)
+        if self.original:
+            xy = self.h.apply_to_points([xy], inverse=True)[0]
+        self.draw.text(tuple(xy), string, font=font, fill=color, stroke_fill='white', stroke_width=2)
+
+    def compose_image(self, sensitivity=25):
+        pitch_mask = get_edge_img(self.base_im, sensitivity=sensitivity)
+        self.draw_im.putalpha(Image.fromarray(np.minimum(pitch_mask, np.array(self.draw_im.split()[-1]))))
+        return Image.alpha_composite(self.base_im.convert("RGBA"), self.draw_im)
+
 
 def line_intersect(si1, si2):
     m1, b1 = si1
@@ -120,14 +162,17 @@ def calculate_voronoi(df):
 
 def get_polygon(points, image, convert):
     base_polygon = Polygon(points.tolist())
-    pitch_polygon = Polygon(((0,0), (0,image.h.im_heigth), (image.h.im_width,image.h.im_heigth), (image.h.im_width,0)))
-    camera_polygon = Polygon(image.h.apply_to_points(((0,0), (0,image.im.height), (image.im.width, image.im.height), (image.im.width,0))))
+    pitch_polygon = Polygon(image.get_pitch_coords())
+    camera_polygon = Polygon(image.get_camera_coords()).convex_hull
     polygon = camera_polygon.intersection(pitch_polygon).intersection(base_polygon)
-    if convert:
-        polygon = image.h.apply_to_points(np.vstack(polygon.exterior.xy).T, inverse=True)
+    if polygon.area>0:
+        if convert:
+            polygon = image.h.apply_to_points(np.vstack(polygon.exterior.xy).T, inverse=True)
+        else:
+            polygon = np.vstack(polygon.exterior.xy).T
+        return polygon
     else:
-        polygon = np.vstack(polygon.exterior.xy).T
-    return polygon
+        return None
     
 def get_edge_img(img, sensitivity=25):
     hsv_img = cv2.cvtColor(np.array(img), cv2.COLOR_BGR2HSV)
@@ -138,9 +183,3 @@ def get_edge_img(img, sensitivity=25):
 
     mask = cv2.inRange(hsv_img, min_filter, max_filter)
     return mask
-
-def apply_effect(base_image, effect_image, opacity=70, original=True, sensitivity=25):
-    pitch_mask = get_edge_img(base_image, sensitivity=sensitivity)
-    effect_image.putalpha(Image.fromarray(np.minimum(pitch_mask, np.array(effect_image.split()[-1]))))
-    return Image.alpha_composite(base_image.convert("RGBA"), effect_image)
-

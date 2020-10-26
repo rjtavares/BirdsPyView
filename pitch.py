@@ -32,12 +32,12 @@ class FootballPitch(Pitch):
         self.vert_lines = {'LG': 0,
                            'LGA': self.GOAL_AREA_WIDTH,
                            'LPA': self.BOX_WIDTH,
+                           'LCC': self.X_SIZE/2-9.15,
                            'M': self.X_SIZE/2,
+                           'RCC': self.X_SIZE/2+9.15,
                            'RPA': self.X_SIZE-self.BOX_WIDTH,
                            'RGA': self.X_SIZE-self.GOAL_AREA_WIDTH,
-                           'RG': self.X_SIZE,
-                           'RCC': self.X_SIZE/2+9.15,
-                           'LCC': self.X_SIZE/2-9.15
+                           'RG': self.X_SIZE
                            }
 
         self.horiz_lines =  {'DG': self.BOX_HEIGHT,
