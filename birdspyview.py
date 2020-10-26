@@ -115,7 +115,7 @@ if image_to_open:
                     show_voronoi = st.checkbox('Show Voronoi', value=True)
                     voronoi_opacity = int(st.slider('Voronoi Opacity', 0, 100, value=30)*2.5)
                     player_highlights = st.multiselect('Players to highlight', list(dfCoords.index))
-                    player_size = st.slider('Circle size', 1, 10)
+                    player_size = st.slider('Circle size', 1, 10, value=2)
                     player_opaciy = int(st.slider('Circle Opacity', 0, 100, value=50)*2.5)
                 with o_col1:
                     draw = PitchDraw(image, original=True)

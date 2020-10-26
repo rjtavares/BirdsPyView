@@ -112,7 +112,7 @@ class PitchDraw():
 
     def draw_circle(self, xy, color, size=1, outline='gray'):
         center = Point(*xy)
-        scaler = self.h.coord_converter/self.h.coord_converter.sum()*2
+        scaler = self.h.coord_converter/self.h.coord_converter.sum()
         circle = scale(center.buffer(size), *reversed(scaler))
         if self.original:
             points = self.h.apply_to_points(np.vstack(circle.exterior.xy).T*self.h.coord_converter, inverse=True)
