@@ -110,26 +110,26 @@ if image_to_open:
                 sensitivity = int(st.slider("Sensitivity (decrease if it is drawing over the players; "+
                                             "increase if the areas don't cover the whole pitch)"
                                             , 0, 80, value=10)*2.5)
-                o_col1, o_col2, o_col3 = st.beta_columns((4,3,1))
-                with o_col3:
+                o_col1, o_col2, o_col3 = st.beta_columns((3,1,3))
+                with o_col2:
                     show_voronoi = st.checkbox('Show Voronoi', value=True)
-                    voronoi_opacity = int(st.slider('Opacity', 0, 100, value=30)*2.5)
+                    voronoi_opacity = int(st.slider('Voronoi Opacity', 0, 100, value=30)*2.5)
                     player_highlights = st.multiselect('Players to highlight', list(dfCoords.index))
                     player_size = st.slider('Circle size', 1, 10)
-                    player_opaciy = int(st.slider('Opacity', 0, 100, value=50)*2.5)
+                    player_opaciy = int(st.slider('Circle Opacity', 0, 100, value=50)*2.5)
                 with o_col1:
                     draw = PitchDraw(image, original=True)
                     if show_voronoi:
                         draw.draw_voronoi(voronoi, image, voronoi_opacity)
                     for pid, coord in dfCoords.iterrows():
-                        if coord['team']=='red':
-                            fill_color = (255,0,0,player_opaciy)
-                        else:
-                            fill_color=(0,0,255,player_opaciy)
                         if pid in player_highlights:
-                            draw.draw_circle(coord[['x','y']].values, fill_color, player_size)
+                            if coord['team']=='red':
+                                fill_color = (255,0,0,player_opaciy)
+                            else:
+                                fill_color=(0,0,255,player_opaciy)
+                            draw.draw_circle(coord[['x','y']].values, fill_color, player_size, coord['team'])
                     st.image(draw.compose_image(sensitivity))
-                with o_col2:
+                with o_col3:
                     draw = PitchDraw(image, original=False)
                     for pid, coord in dfCoords.iterrows():
                         draw.draw_circle(coord[['x','y']].values, 1)

@@ -98,8 +98,8 @@ class PitchDraw():
         self.original = original
         self.h = pitch_image.h
 
-    def draw_polygon(self, polygon, color):
-        self.draw.polygon(list(tuple(point) for point in polygon.tolist()), fill=color, outline='gray')
+    def draw_polygon(self, polygon, color, outline='gray'):
+        self.draw.polygon(list(tuple(point) for point in polygon.tolist()), fill=color, outline=outline)
 
     def draw_voronoi(self, voronoi, image, opacity):
         for pol in voronoi.get_voronoi_polygons(image, self.original):
@@ -110,7 +110,7 @@ class PitchDraw():
                     fill_color=(0,0,255,opacity)
                 self.draw_polygon(pol['polygon'], fill_color)
 
-    def draw_circle(self, xy, color, size=1):
+    def draw_circle(self, xy, color, size=1, outline='gray'):
         center = Point(*xy)
         scaler = self.h.coord_converter/self.h.coord_converter.sum()*2
         circle = scale(center.buffer(size), *reversed(scaler))
@@ -118,11 +118,11 @@ class PitchDraw():
             points = self.h.apply_to_points(np.vstack(circle.exterior.xy).T*self.h.coord_converter, inverse=True)
         else:
             points = np.vstack(circle.exterior.xy).T*self.h.coord_converter
-        self.draw_polygon(points, color)
+        self.draw_polygon(points, color, outline)
 
     def draw_text(self, xy, string, color):
         xy = xy*self.h.coord_converter
-        font = ImageFont.truetype("arial.ttf", size=12)
+        font = ImageFont.load_default()
         if self.original:
             xy = self.h.apply_to_points([xy], inverse=True)[0]
         self.draw.text(tuple(xy), string, font=font, fill=color, stroke_fill='white', stroke_width=2)
