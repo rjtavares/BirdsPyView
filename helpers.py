@@ -125,7 +125,7 @@ class PitchDraw():
         font = ImageFont.load_default()
         if self.original:
             xy = self.h.apply_to_points([xy], inverse=True)[0]
-        self.draw.text(tuple(xy), string, font=font, fill=color, stroke_fill='white', stroke_width=2)
+        self.draw.text(tuple(xy), string, font=font, fill=color)
 
     def compose_image(self, sensitivity=25):
         pitch_mask = get_edge_img(self.base_im, sensitivity=sensitivity)
