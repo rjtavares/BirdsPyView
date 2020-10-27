@@ -38,7 +38,6 @@ class Homography():
         Returns:
             ndarray: An array of size (n,2)
         """
-        st.write(points.shape)
         h = np.linalg.inv(self.h) if inverse else self.h
         _points = np.hstack([points, np.ones((len(points), 1))])
         _converted_points = np.dot(h,_points.T)
