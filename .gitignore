@@ -2,3 +2,4 @@ test images/
 *.pyc
 BirdsPyView/output.csv
 .vscode/
+*.ipynb
