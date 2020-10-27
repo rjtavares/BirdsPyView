@@ -32,13 +32,9 @@ class FootballPitch(Pitch):
         self.vert_lines = {'LG': 0,
                            'LGA': self.GOAL_AREA_WIDTH,
                            'LPA': self.BOX_WIDTH,
-<<<<<<< HEAD:BirdsPyView/pitch.py
-                           'M': self.X_SIZE/2,
-=======
                            'LCC': self.X_SIZE/2-9.15,
                            'M': self.X_SIZE/2,
                            'RCC': self.X_SIZE/2+9.15,
->>>>>>> streamlit_test:pitch.py
                            'RPA': self.X_SIZE-self.BOX_WIDTH,
                            'RGA': self.X_SIZE-self.GOAL_AREA_WIDTH,
                            'RG': self.X_SIZE
