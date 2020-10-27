@@ -17,10 +17,28 @@ class Homography():
         self.coord_converter = np.array(self.im_size)/100
 
     def apply_to_image(self, image):
+        """Applies homography to provided image.
+
+        Args:
+            image (PitchImage): A PitchImage instance
+
+        Returns:
+            ndarray: numpy array representing an image of size self.im_size
+        """
         im_out = cv2.warpPerspective(np.array(image.im), self.h, self.im_size)
         return im_out
 
     def apply_to_points(self, points, inverse=False):
+        """Applies homography to provided points
+
+        Args:
+            points (ndarray): An array of size (n,2).
+            inverse (bool, optional): If True, inverts the homography matrix. Defaults to False.
+
+        Returns:
+            ndarray: An array of size (n,2)
+        """
+        st.write(points.shape)
         h = np.linalg.inv(self.h) if inverse else self.h
         _points = np.hstack([points, np.ones((len(points), 1))])
         _converted_points = np.dot(h,_points.T)
