@@ -109,7 +109,7 @@ if image_to_open:
                 voronoi = VoronoiPitch(dfCoords)
                 sensitivity = int(st.slider("Sensitivity (decrease if it is drawing over the players; "+
                                             "increase if the areas don't cover the whole pitch)"
-                                            , 0, 80, value=10)*2.5)
+                                            , 0, 30, value=5)*2.5)
                 o_col1, o_col2, o_col3 = st.beta_columns((3,1,3))
                 with o_col2:
                     show_voronoi = st.checkbox('Show Voronoi', value=True)
