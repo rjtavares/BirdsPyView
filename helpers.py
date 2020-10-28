@@ -3,7 +3,7 @@ import numpy as np
 from shapely.geometry import Polygon, Point
 from shapely.affinity import scale
 from itertools import product
-from PIL import Image, ImageFont, ImageDraw, ImageChops
+from PIL import Image, ImageFont, ImageDraw, ImageChops, ImageColor
 import streamlit as st
 
 class Homography():
@@ -121,13 +121,10 @@ class PitchDraw():
     def draw_voronoi(self, voronoi, image, opacity):
         for pol in voronoi.get_voronoi_polygons(image, self.original):
             if pol['polygon'] is not None:
-                if pol['color'] == 'red':
-                    fill_color=(255,0,0,opacity)
-                else:
-                    fill_color=(0,0,255,opacity)
+                fill_color=get_rgba(pol['color'], opacity)
                 self.draw_polygon(pol['polygon'], fill_color)
 
-    def draw_circle(self, xy, color, size=1, outline='gray'):
+    def draw_circle(self, xy, color, size=1, opacity=255, outline=None):
         center = Point(*xy)
         scaler = self.h.coord_converter/self.h.coord_converter.sum()
         circle = scale(center.buffer(size), *reversed(scaler))
@@ -135,7 +132,9 @@ class PitchDraw():
             points = self.h.apply_to_points(np.vstack(circle.exterior.xy).T*self.h.coord_converter, inverse=True)
         else:
             points = np.vstack(circle.exterior.xy).T*self.h.coord_converter
-        self.draw_polygon(points, color, outline)
+        fill_color = get_rgba(color, opacity)
+        if outline is None: outline = color
+        self.draw_polygon(points, fill_color, outline)
 
     def draw_text(self, xy, string, color):
         xy = xy*self.h.coord_converter
@@ -200,3 +199,7 @@ def get_edge_img(img, sensitivity=25):
 
     mask = cv2.inRange(hsv_img, min_filter, max_filter)
     return mask
+
+def get_rgba(color, alpha=255):
+    color = ImageColor.getrgb(color)
+    return color+(alpha,)

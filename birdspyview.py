@@ -1,9 +1,23 @@
 import streamlit as st
 from streamlit_drawable_canvas import st_canvas
 import pandas as pd
-from helpers import Homography, VoronoiPitch, PitchImage, PitchDraw
+from helpers import Homography, VoronoiPitch, PitchImage, PitchDraw, get_rgba
 from pitch import FootballPitch
 
+colors = {'black': '#000000',
+          'blue': '#0000ff',
+          'brown': '#a52a2a',
+          'cyan': '#00ffff',
+          'grey': '#808080',
+          'green': '#008000',
+          'magenta': '#ff00ff',
+          'maroon': '#800000',
+          'orange': '#ffa500',
+          'pink': '#ffc0cb',
+          'red': '#ff0000',
+          'white': '#ffffff',
+          'yellow': '#ffff00'}
+        
 st.set_option('deprecation.showfileUploaderEncoding', False)
 st.beta_set_page_config(page_title='BirdsPyView', layout='wide')
 st.title('Upload Image')
@@ -62,12 +76,8 @@ if image_to_open:
             p_col1, p_col2, p_col_, p_col3 = st.beta_columns([2,1,0.5,1])
 
             with p_col2:
-                team_color = st.selectbox("Team color: ", ['red', 'blue'])
-                if team_color == 'red':
-                    stroke_color='#e00'
-                else:
-                    stroke_color='#00e'
-
+                team_color = st.selectbox("Team color: ", list(colors.keys()))
+                stroke_color=colors[team_color]
                 edit = st.checkbox('Edit mode (move selection boxes)')
                 update = st.button('Update data')
                 original = True #st.checkbox('Select on original image', value=True)
@@ -99,7 +109,8 @@ if image_to_open:
                         dfCoords['x'] = (dfCoords['left']+dfCoords['width']*dfCoords['scaleX'])
                         dfCoords['y'] = (dfCoords['top']+dfCoords['height']*dfCoords['scaleY'])
                     dfCoords[['x', 'y']] = dfCoords[['x', 'y']]/image.h.coord_converter
-                    dfCoords['team'] = dfCoords.apply(lambda x: 'red' if x['stroke']=='#e00' else 'blue', axis=1)
+                    dfCoords['team'] = dfCoords.apply(lambda x: {code: color for color,code in colors.items()}.get(x['stroke']),
+                                                      axis=1)
 
                 with p_col3:
                     st.write('Player Coordinates:')
@@ -113,27 +124,23 @@ if image_to_open:
                 o_col1, o_col2, o_col3 = st.beta_columns((3,1,3))
                 with o_col2:
                     show_voronoi = st.checkbox('Show Voronoi', value=True)
-                    voronoi_opacity = int(st.slider('Voronoi Opacity', 0, 100, value=30)*2.5)
+                    voronoi_opacity = int(st.slider('Voronoi Opacity', 0, 100, value=20)*2.5)
                     player_highlights = st.multiselect('Players to highlight', list(dfCoords.index))
                     player_size = st.slider('Circle size', 1, 10, value=2)
-                    player_opaciy = int(st.slider('Circle Opacity', 0, 100, value=50)*2.5)
+                    player_opacity = int(st.slider('Circle Opacity', 0, 100, value=50)*2.5)
                 with o_col1:
                     draw = PitchDraw(image, original=True)
                     if show_voronoi:
                         draw.draw_voronoi(voronoi, image, voronoi_opacity)
                     for pid, coord in dfCoords.iterrows():
                         if pid in player_highlights:
-                            if coord['team']=='red':
-                                fill_color = (255,0,0,player_opaciy)
-                            else:
-                                fill_color=(0,0,255,player_opaciy)
-                            draw.draw_circle(coord[['x','y']].values, fill_color, player_size, coord['team'])
+                            draw.draw_circle(coord[['x','y']].values, coord['team'], player_size, player_opacity)
                     st.image(draw.compose_image(sensitivity))
                 with o_col3:
                     draw = PitchDraw(image, original=False)
                     for pid, coord in dfCoords.iterrows():
-                        draw.draw_circle(coord[['x','y']].values, 1)
-                        draw.draw_text(coord[['x','y']], f"{pid}", coord['team'])
+                        draw.draw_circle(coord[['x','y']].values, coord['team'], 2, player_opacity)
+                        draw.draw_text(coord[['x','y']]+0.5, f"{pid}", coord['team'])
                     st.image(draw.compose_image(sensitivity))
 
                 if st.button('Save data to disk'):
