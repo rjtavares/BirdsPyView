@@ -5,6 +5,8 @@ from shapely.affinity import scale
 from itertools import product
 from PIL import Image, ImageFont, ImageDraw, ImageChops, ImageColor
 import streamlit as st
+import tempfile
+import base64
 
 class Homography():
     def __init__(self, pts_src, pts_dst):
@@ -62,13 +64,27 @@ class VoronoiPitch():
                  'color': self.get_color_region(region)}
                 for region in self.get_regions()]
 
+class Play():
+    def __init__(self, uploaded_video):
+        with tempfile.NamedTemporaryFile() as fp:
+            fp.write(uploaded_video.getvalue())
+            self.video = cv2.VideoCapture(fp.name)
+
+    def get_frame(self, t):
+        self.video.set(cv2.CAP_PROP_POS_MSEC, t*1000)
+        success,img = self.video.read()
+        return img
+
 class PitchImage():
-    def __init__(self, image_to_open, pitch, width=600):
-        self.im = self.open(image_to_open, width=width)
+    def __init__(self, pitch, image=None, image_bytes=None, width=600):
+        if image is not None:
+            im_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            self.im = self.resize(Image.fromarray(im_rgb), width=width)
+        else:
+            self.im = self.resize(Image.open(image_bytes), width=width)
         self.pitch = pitch
 
-    def open(self, image_to_open, width):
-        im = Image.open(image_to_open)
+    def resize(self, im, width):
         im = im.resize((width, int(width*im.height/im.width)))
         return im
     
@@ -203,3 +219,13 @@ def get_edge_img(img, sensitivity=25):
 def get_rgba(color, alpha=255):
     color = ImageColor.getrgb(color)
     return color+(alpha,)
+
+def get_table_download_link(df):
+    """Generates a link allowing the data in a given panda dataframe to be downloaded
+    in:  dataframe
+    out: href string
+    """
+    csv = df.to_csv(index=True)
+    b64 = base64.b64encode(csv.encode()).decode()  # some strings <-> bytes conversions necessary here
+    href = f'<a href="data:file/csv;base64,{b64}" download="data.csv">Download csv file</a>'
+    return href

@@ -1,7 +1,7 @@
 import streamlit as st
 from streamlit_drawable_canvas import st_canvas
 import pandas as pd
-from helpers import Homography, VoronoiPitch, PitchImage, PitchDraw, get_rgba
+from helpers import Homography, VoronoiPitch, Play, PitchImage, PitchDraw, get_table_download_link
 from pitch import FootballPitch
 
 colors = {'black': '#000000',
@@ -17,21 +17,28 @@ colors = {'black': '#000000',
           'red': '#ff0000',
           'white': '#ffffff',
           'yellow': '#ffff00'}
-        
+
 st.set_option('deprecation.showfileUploaderEncoding', False)
 st.beta_set_page_config(page_title='BirdsPyView', layout='wide')
 st.title('Upload Image')
-image_to_open = st.file_uploader("Select Image file to open:", type=["png", "jpg"])
+uploaded_file = st.file_uploader("Select Image file to open:", type=["png", "jpg", "mp4"])
 pitch = FootballPitch()
 
-if image_to_open:
+if uploaded_file:
+    if uploaded_file.type == 'video/mp4':
+        play = Play(uploaded_file)
+        t = st.slider('You have uploaded a video. Choose the frame you want to process:', 0.0,60.0)
+        image = PitchImage(pitch, image=play.get_frame(t))
+    else:
+        image = PitchImage(pitch, image_bytes=image_to_open)
+
+
     st.title('Pitch lines')
 
     lines_expander = st.beta_expander('Draw pitch lines on selected image (2 horizontal lines, then 2 vertical lines)',
                                       expanded=True)
     with lines_expander:
         col1, col2, col_, col3 = st.beta_columns([2,1,0.5,1])
-        image = PitchImage(image_to_open, pitch)
 
         with col1:
             canvas_image = st_canvas(
@@ -120,7 +127,7 @@ if image_to_open:
                 voronoi = VoronoiPitch(dfCoords)
                 sensitivity = int(st.slider("Sensitivity (decrease if it is drawing over the players; "+
                                             "increase if the areas don't cover the whole pitch)"
-                                            , 0, 30, value=5)*2.5)
+                                            , 0, 30, value=10)*2.5)
                 o_col1, o_col2, o_col3 = st.beta_columns((3,1,3))
                 with o_col2:
                     show_voronoi = st.checkbox('Show Voronoi', value=True)
@@ -143,6 +150,5 @@ if image_to_open:
                         draw.draw_text(coord[['x','y']]+0.5, f"{pid}", coord['team'])
                     st.image(draw.compose_image(sensitivity))
 
-                if st.button('Save data to disk'):
-                    dfCoords[['team', 'x', 'y']].to_csv('output.csv')
-                    st.info('Saved as output.csv')
+                st.markdown(get_table_download_link(dfCoords[['team', 'x', 'y']]), unsafe_allow_html=True)
+
