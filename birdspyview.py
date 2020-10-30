@@ -20,7 +20,7 @@ colors = {'black': '#000000',
 
 st.set_option('deprecation.showfileUploaderEncoding', False)
 st.beta_set_page_config(page_title='BirdsPyView', layout='wide')
-st.title('Upload Image')
+st.title('Upload Image or Video')
 uploaded_file = st.file_uploader("Select Image file to open:", type=["png", "jpg", "mp4"])
 pitch = FootballPitch()
 
