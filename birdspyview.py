@@ -30,7 +30,7 @@ if uploaded_file:
         t = st.slider('You have uploaded a video. Choose the frame you want to process:', 0.0,60.0)
         image = PitchImage(pitch, image=play.get_frame(t))
     else:
-        image = PitchImage(pitch, image_bytes=image_to_open)
+        image = PitchImage(pitch, image_bytes=uploaded_file)
 
 
     st.title('Pitch lines')
