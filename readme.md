@@ -1,3 +1,5 @@
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/rjtavares/birdspyview/birdspyview.py)
+
 First alpha version of BirdsPyView, a Streamlit app to transform perspective of an image to a top-down view by identifying a rectangle on the ground, built to collect data on football matches.
 
 # Installation
