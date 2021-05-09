@@ -16,7 +16,7 @@ class Homography():
         self.im_size = (525, 340)
         self.im_width = self.im_size[0]
         self.im_heigth = self.im_size[1]
-        self.coord_converter = np.array(self.im_size)/100
+        self.coord_converter = np.array(self.im_size)/100/np.array([1.2,0.8])
 
     def apply_to_image(self, image):
         """Applies homography to provided image.

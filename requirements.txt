@@ -4,3 +4,4 @@ opencv-python
 pandas
 shapely
 scipy
+mplsoccer

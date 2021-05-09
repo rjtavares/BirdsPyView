@@ -152,3 +152,11 @@ if uploaded_file:
 
                 st.markdown(get_table_download_link(dfCoords[['team', 'x', 'y']]), unsafe_allow_html=True)
 
+                #mplsoccer based output viz
+                _, mpl_output, _ = st.beta_columns((1,2,1)) #temporary, as fig size doesn't seem to be working
+                from mplsoccer import Pitch
+                pitch = Pitch(pitch_type='statsbomb', pitch_color='#22312b')
+                fig, ax = pitch.draw()
+                pitch.scatter(dfCoords.x, dfCoords.y, c=dfCoords.team, ax=ax, s=120, edgecolors='white')
+                with mpl_output:
+                    st.pyplot(fig)
