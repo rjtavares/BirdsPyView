@@ -1,6 +1,6 @@
 streamlit
 streamlit-drawable-canvas
-opencv-python
+opencv-python-headless
 pandas
 shapely
 scipy
